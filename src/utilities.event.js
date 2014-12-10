@@ -15,20 +15,44 @@ define(function(require) {
 
     'use strict';
 
-    var matches = require('uni/utilities.element.matches'),
-        storage = require('uni/utilities.storage'),
-        typecheck = require('uni/utilities.object.typecheck');
+    var _matches = require('uni/utilities.element.matches'),
+        _storage = require('uni/utilities.storage'),
+        _typecheck = require('uni/utilities.object.typecheck');
 
     // private function that executes all registered handlers for the eventtype.
     function _executeCallbacks(object, handlers, event, data) {
         // see what arguments to pass into the callback.
         var extra = [];
-        if (event) extra.push(event);
+        if (event) {
+            extra.push(event);
+            if (event.detail) extra.push(event.detail);
+            if (!event.target) event.target = event.srcElement;
+            if (!event.currentTarget) event.currentTarget = object;
+        }
+        else event = {};
         if (data) extra.push(data);
-        if (event && event.detail) extra.push(event.detail);
 
         for (var i = 0; i < handlers.length; i++) {
-            if (!handlers[i].selector || matches(event.target, handlers[i].selector)) {
+            if (handlers[i].selector) {
+                // check is the event is triggered by an element that matches the selector,
+                // or the event bubbled past the selector.
+                var match = null,
+                    node = event.target;
+
+                while (!match && node && node !== object) {
+                    if (_matches(node, handlers[i].selector)) {
+                        match = node;
+                    } else {
+                        node = node.parentNode;
+                    }
+                }
+                // store the matched target to the event.
+                if (match) {
+                    event.selectedTarget = match;
+                }
+            }
+            // if the there was no selector, or the selctor matched, execute the callback.
+            if (!handlers[i].selector || match) {
                 handlers[i].callback.apply(object, extra);
             }
         }
@@ -53,7 +77,7 @@ define(function(require) {
 
             // if the object is a dom-node,
             // dispatch the dom-event on the element.
-            if (typecheck.isElement(object)) {
+            if (_typecheck.isElement(object)) {
                 // construct the event.
                 var event,
                     eventInitDict = {
@@ -62,23 +86,29 @@ define(function(require) {
                         detail: data
                     };
 
-                // Event contructor is supported.
-                if (typeof Event == 'function') {
+                // Event constructor is supported.
+                if (typeof CustomEvent == 'function') {
                     event = new CustomEvent(eventName, eventInitDict);
                 } else if (document.createEvent) {
                     // the old-fashioned way.
                     event = document.createEvent('Event');
                     event.initEvent(eventName, bubbles || true, cancelable);
                     event.detail = data;
+                } else if (document.createEventObject) {
+                    // the prehistoric way.
+                    event = document.createEventObject();
                 }
 
                 if (document.createEvent) {
                     object.dispatchEvent(event);
+                } else if (document.createEventObject) {
+                    object.fireEvent('on' + eventName, event);
                 }
             } else {
+
                 // if the object is a some other object,
                 // execute the eventhandler for this event-type.
-                var events = storage.get(object, this.storage_key);
+                var events = _storage.get(object, this.storage_key);
                 if (events && events[eventName]) {
                     var handlers = events[eventName].handlers;
                     _executeCallbacks(object, handlers, null, data);
@@ -91,12 +121,18 @@ define(function(require) {
          * @param {Element | Object} object The object that listens to the event.
          * @param {String} eventName The event to listen to.
          * @param {Function} callback The function to execute.
-         * @param {String} selector A css seelctor the element that triggered the event has to match.
+         * @param {String} selector A css selector the element that triggered the event has to match.
          */
         on: function(object, eventName, callback, selector) {
             if (!object || typeof callback !== 'function') return;
 
-            var handlers = storage.get(object, this.storage_key) || {};
+            var isDomObject = _typecheck.isElement(object) || object == document || object == window;
+
+            if (isDomObject && !object.addEventListener) {
+                eventName = 'on' + eventName;
+            }
+
+            var handlers = _storage.get(object, this.storage_key) || {};
             if (!handlers[eventName]) {
                 handlers[eventName] = {handlers: []};
             }
@@ -107,14 +143,14 @@ define(function(require) {
             });
 
             // store the handler on the object so it can be removed later.
-            storage.set(object, this.storage_key, handlers);
+            _storage.set(object, this.storage_key, handlers);
 
-            // if the object is a dom-node and there's no eventlistener for this eventype on the element,
+            // if the object is a dom-node and there's no eventlistener for this eventtype on the element,
             // add an actual eventlistener.
-            if (typecheck.isElement(object) && !handlers[eventName].domEventHandler) {
+            if (isDomObject && !handlers[eventName].domEventHandler) {
                 handlers[eventName].domEventHandler = function(event) {
                     _executeCallbacks(object, handlers[eventName].handlers, event);
-                }
+                };
 
                 if (object.addEventListener) {
                     object.addEventListener(eventName, handlers[eventName].domEventHandler);
@@ -131,13 +167,13 @@ define(function(require) {
          * @param {Function} callback The callback to remove.
          */
         off: function(object, eventName, callback) {
-            var handlers = storage.get(object, this.storage_key);
+            var handlers = _storage.get(object, this.storage_key);
             if (!handlers || !handlers[eventName]) return;
 
             // if no handler is specified, remove all handlers for the event.
             if (!callback) {
                 // if the object is a dom-node, remove the actual eventlistener.
-                if (typecheck.isElement(object)) {
+                if (_typecheck.isElement(object)) {
                     object.removeEventListener(eventName, handlers[eventName].domEventHandler);
                 }
                 // remove all callbacks for this event-type from the storage.

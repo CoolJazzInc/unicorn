@@ -38,13 +38,17 @@ define(function(require) {
             if (typecheck.isObject(property)) {
                 for (var prop in property) {
                     // if there's a value, set it.
-                    if (property[prop]) element.style[setter](prop, property[prop]);
+                    if (typeof property[prop] != 'undefined') {
+                        element.style[setter](prop, property[prop].toString());
+                    }
                     // else, remove the property.
-                    else this.remove(element, prop);
+                    else {
+                        this.remove(element, prop);
+                    }
                 }
             } else if (typecheck.isString(property)) {
                 if (value) {
-                    element.style[setter](property, value);
+                    element.style[setter](property, value.toString());
                 } else {
                     this.remove(element, property);
                 }

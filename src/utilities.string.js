@@ -26,6 +26,17 @@ define(function() {
             return string.replace(/-(.)/g, function($0, $1) {
                 return $1.toUpperCase();
             });
+        },
+
+        htmlDecode: function(string) {
+            var tmp = document.createElement('a'),
+                decoded = '';
+
+            tmp.innerHTML = string;
+            decoded = tmp.textContent;
+            tmp = null;
+
+            return decoded;
         }
     };
 });

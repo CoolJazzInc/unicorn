@@ -174,8 +174,8 @@ define(function(require) {
      * @return {String} The direction: left | right | up | down.
      */
     SwipeListener.prototype.getDirection = function(angle) {
-        var direction = 'right';
-        switch (angle) {
+        var direction;
+        switch (true) {
             case angle > 45 && angle <= 135:
                 direction = 'down';
                 break;
@@ -184,6 +184,8 @@ define(function(require) {
                 break;
             case angle > 225 && angle <= 315:
                 direction = 'up';
+            default:
+                direction = 'right'
         }
 
         return direction;
@@ -202,8 +204,6 @@ define(function(require) {
     }
 
     // return the module's function.
-    return function(element) {
-        return new SwipeListener(element);
-    };
+    return SwipeListener;
 
 });

@@ -1,15 +1,15 @@
 
-/**
- * Utility functions to query and manipulate the DOM.
- */
-
-'use strict';
-
 define(function() {
+
+    /**
+     * Utility functions to query and manipulate the DOM.
+     * @module dom
+     */
 
     'use strict';
 
-    return {
+    /** @lends module:dom */
+    var _dom = {
         /**
          * proxy for document.getElementById.
          * @param {String} id The id.
@@ -46,9 +46,9 @@ define(function() {
          * @return {NodeList} the list of elements.
          */
         get: function(selector, parent) {
-        if (!parent) parent = document;
-        return parent.querySelectorAll(selector);
-    },
+            if (!parent) parent = document;
+            return parent.querySelectorAll(selector);
+        },
         /**
          * proxy for querySelector.
          * @param {String} selector The selector.
@@ -60,10 +60,10 @@ define(function() {
             return parent.querySelector(selector);
         },
         /**
-         * Get the childnodes from an element that are HTMLElements.
+         * Get the child nodes from an element that are HTMLElements.
          * Some older browsers also return comment nodes in the children property.
          * @param {HTMLElement} element The element to ge the children from.
-         * @return {Array} The childnodes.
+         * @return {Array} The child nodes.
          */
         getChildren: function(element) {
             var children = [], node = element.firstChild;
@@ -210,7 +210,7 @@ define(function() {
 
         /**
          * Create an element with optional attributes.
-         * @param {String} tag The tagname.
+         * @param {String} tag The tag name.
          * @param {Object} attributes The attributes to set for the element.
          * @return {HTMLElement} the element.
          */
@@ -224,6 +224,43 @@ define(function() {
                 }
             }
             return element;
+        },
+
+        createFromHtml: function(html) {
+            var wrappers = {
+                    THEAD: ['<table>', '</table>', 1],
+                    TFOOT: ['<table>', '</table>', 1],
+                    TBODY: ['<table>', '</table>', 1],
+                    TR: ['<table><tbody>', '</tbody></table>', 2],
+                    TD: ['<table><tbody><tr>', '</tr></tbody></table>', 3],
+                    TH: ['<table><tbody><tr>', '</tr></tbody></table>', 3],
+                    OPTION: ['<select>', '</select>', 1]
+                },
+                rootTag = html.match(/<([A-Za-z0-9]+)/),
+                element = document.createElement('div'),
+                result = null;
+
+            if (rootTag && rootTag[1] && rootTag[1].toUpperCase() in wrappers) {
+                var tag = rootTag[1].toUpperCase();
+                html = wrappers[tag][0] + html + wrappers[tag][1];
+
+                element.innerHTML = html;
+                var wrapped = element.firstChild,
+                    i = 0;
+                while (i < wrappers[tag][2]) {
+                    result = wrapped.firstChild;
+                    wrapped = result;
+                    i++;
+                }
+            } else {
+                element.innerHTML = html;
+                result = element.firstChild;
+                element = null;
+            }
+
+            return result;
         }
     };
+
+    return _dom;
 });

@@ -1,6 +1,8 @@
 /**
  * Get the dimensions of an element, even if it it hidden.
  * @param {Element} element The element to measure.
+ * @param {Boolean} natural Get the natural height and width of the element,
+ *  with no height or width styles properties set.
  * @return {Object} The inner and outer-dimensions of the element.
  */
 
@@ -11,7 +13,7 @@ define(function(require) {
     var css = require('uni/utilities.css'),
         boundingclientrect = require('uni/utilities.element.getboundingclientrect');
 
-    return function(element) {
+    return function(element, natural) {
         var display = css.get(element, 'display'),
             borderTop = parseInt(css.get(element, 'border-top-width')) || 0,
             borderLeft = parseInt(css.get(element, 'border-left-width')) || 0,
@@ -23,9 +25,40 @@ define(function(require) {
             paddingBottom = parseInt(css.get(element, 'padding-bottom')) || 0,
             isBorderbox = css.get(element, 'box-sizing') == 'border-box';
 
+        if (natural) {
+            // store the styles to set them back after calculating.
+            var natural_dim = {
+                'height': element.style.height,
+                'max-height': element.style.maxHeight,
+                'min-height': element.style.minHeight,
+                'width': element.style.width,
+                'max-width': element.style.maxWidth,
+                'min-width': element.style.minWidth,
+                'padding-top': element.style.paddingTop,
+                'padding-right': element.style.paddingRight,
+                'padding-bottom': element.style.paddingBottom,
+                'padding-left': element.style.paddingLeft
+            };
+        }
 
         // if the element is not hidden, just return its dimensions.
         if (display && display !== 'none') {
+            // set all styles affecting dimensions to default.
+            if (natural) {
+                css.set(element, {
+                    'height': 'auto',
+                    'max-height': 'none',
+                    'min-height': '0',
+                    'width': 'auto',
+                    'max-width': 'none',
+                    'min-width': '0',
+                    'padding-top': '',
+                    'padding-right': '',
+                    'padding-bottom': '',
+                    'padding-left': ''
+                });
+            }
+
             var rect = boundingclientrect(element),
                 dimensions = {
                     height: rect.height,
@@ -35,6 +68,11 @@ define(function(require) {
                     innerWidth: isBorderbox ? rect.width :
                         rect.width - borderLeft - borderRight - paddingLeft - paddingRight
                 };
+
+            if (natural) {
+                // set all the style back like they were.
+                css.set(element, natural_dim);
+            }
 
         } else {
             // cache any inline styles so they can be restored later.
@@ -64,7 +102,9 @@ define(function(require) {
                 innerHeight: isBorderbox ? rect.height :
                     rect.height - borderTop - borderBottom - paddingTop - paddingBottom,
                 innerWidth: isBorderbox ? rect.width :
-                    rect.width - borderLeft - borderRight - paddingLeft - paddingRight
+                    rect.width - borderLeft - borderRight - paddingLeft - paddingRight,
+                borderBoxInnerHeight: rect.height - borderTop - borderBottom - paddingTop - paddingBottom,
+                borderBoxInnerWidth: rect.width - borderLeft - borderRight - paddingLeft - paddingRight
             };
 
             // restore its original styles.

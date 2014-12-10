@@ -9,20 +9,20 @@ define(function(require) {
 
     'use strict';
 
-    var typeCheck = require('utilities.object.typecheck.js');
+    var typeCheck = require('uni/utilities.object.typecheck');
 
     return function(object, func) {
-        // array-like object.
-        if (object.length) {
-            for (var i = 0; i < object.length; i++) {
-                func(object[i], i);
-            }
         // plain object.
-        } else if (typeCheck.isObject(object)) {
+        if (typeCheck.isObject(object)) {
             for (var key in object) {
                 if (object.hasOwnProperty(key)) {
                     func(key, object[key]);
                 }
+            }
+        // array-like object.
+        } else if (object.length) {
+            for (var i = 0; i < object.length; i++) {
+                func(object[i], i);
             }
         }
     };

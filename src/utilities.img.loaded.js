@@ -1,7 +1,7 @@
 
 /**
  * Execute a callback when an image is loaded.
- * Fixes issue with browsers not fireing the load event when the image is loaded from cache.
+ * Fixes issue with browsers not firing the load event when the image is loaded from cache.
  */
 
 define(function(require) {
@@ -11,19 +11,22 @@ define(function(require) {
     var event = require('uni/utilities.event');
 
     /**
-     *
+     * Check if the image is loaded.
+     * If not, add a load event listener.
+     * @class OnImageLoad
      */
-    var onImageLoad = function() {
+    var OnImageLoad = function() {
         this.init.apply(this, arguments);
-    }
+    };
 
     /**
      * Check if the image is loaded, if not, attach a load listener.
      * @param {Element} image The image to check.
      * @param {Function} callback The function to execute when the image is loaded.
+     * @memberof OnImageLoad
      */
-    onImageLoad.prototype.init = function(image, callback) {
-        if (image.nodeType === 1 && image.tagName.toLowerCase() === 'img' && image.src) {
+    OnImageLoad.prototype.init = function(image, callback) {
+        if (image.nodeType === 1 && image.tagName.toLowerCase() === 'img') {
             if (image.complete || image.readyState === 4) {
                 // if the image is already loaded, execute the callback.
                 this.onload(image, callback);
@@ -32,16 +35,17 @@ define(function(require) {
                 event.on(image, 'load', this.onload.bind(this, image, callback));
             }
         }
-    }
+    };
 
     /**
      * Execute a function when the image is loaded.
      * @param {Element} image The image that is loaded.
-     * @param {Function} callback The fucntion to execute.
+     * @param {Function} callback The function to execute.
+     * @memberof OnImageLoad
      */
-    onImageLoad.prototype.onload = function(image, callback) {
+    OnImageLoad.prototype.onload = function(image, callback) {
         callback.apply(image);
-    }
+    };
 
-    return onImageLoad;
+    return OnImageLoad;
 });

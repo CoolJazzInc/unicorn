@@ -1,10 +1,17 @@
 
 define(function(require) {
 
+    /**
+     * Create and send Ajax requests.
+     * @module ajax
+     * @requires utilities.object
+     */
+
     'use strict';
 
     var object = require('uni/utilities.object');
 
+    /** @lends module:ajax */
     return {
         /**
          * Create the request object.
@@ -45,14 +52,23 @@ define(function(require) {
          * @param {String} url The url for the request.
          * @param {Object} options The request options.
          */
-        sendRequest: function(method, url, options) {
+        sendRequest: function(url, method, options) {
             options = options || {};
             if (!url) return;
-            var xhr = this.createRequest(options);
+            var xhr = this.createRequest(options),
+                data;
+
+            if (method == 'get' && options.data) {
+                url += ('?' + object.serialize(options.data));
+            }
 
             xhr.open(method || 'get', url, true);
-            if (method == 'post' && options.data) {
-                var data = options.data instanceof FormData ? options.data : object.serialize(options.data);
+
+            if (options.contentType) {
+                xhr.setRequestHeader('Content-Type', options.contentType);
+            } else if (method == 'post' && options.data) {
+                data = options.data;
+                xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
             }
 
             xhr.send(data);
@@ -63,7 +79,7 @@ define(function(require) {
          * @param {Object} options The request options.
          */
         get: function(url, options) {
-            this.sendRequest('get', url, options);
+            this.sendRequest(url, 'get', options);
         },
         /**
          * proxy for sendRequest using 'POST'.
@@ -71,7 +87,7 @@ define(function(require) {
          * @param {Object} options The request options.
          */
         post: function(url, options) {
-            this.sendRequest('post', url, options);
+            this.sendRequest(url, 'post', options);
         }
     };
 });

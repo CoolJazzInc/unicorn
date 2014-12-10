@@ -26,7 +26,7 @@ define(function() {
         // if not, get all attributes starting with 'data-' and build the set.
         for (var attr in element.attributes) {
             var objAttr = element.attributes[attr];
-            if (objAttr.name && typeof objAttr !== 'function') {
+            if (objAttr && objAttr.name && typeof objAttr !== 'function') {
                 var dataAttr = objAttr.name.match(/^data-(.+)/);
                 if (dataAttr && dataAttr[1]) {
                     // in native dataset everything is converted to lowercase.

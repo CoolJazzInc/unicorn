@@ -2,7 +2,7 @@
  * Check the type of an object.
  */
 
-define(function(){
+define(function() {
 
     'use strict';
 
@@ -56,10 +56,22 @@ define(function(){
          * @return {boolean} The object is a nodelist.
          */
         isNodelist: function(object) {
-            var list;
-            if (typeof NodeList !== 'undefined') list = NodeList;
-            else if (typeof StaticNodeList !== 'undefined') list = StaticNodeList; // ie8 calls it 'StaticNodeList'.
-            return !!(list && object && object.constructor && (object.constructor === list));
+            function isMatch(obj, type) {
+                return obj && obj.constructor && (obj.constructor === type);
+            }
+            var match = false;
+
+            if (typeof NodeList !== 'undefined') {
+                match = isMatch(object, NodeList);
+            }
+            if (!match && typeof HTMLCollection !== 'undefined') {
+                match = isMatch(object, HTMLCollection);
+            }
+            if (!match && typeof StaticNodeList !== 'undefined') {
+                match = isMatch(object, StaticNodeList);
+            }
+
+            return match;
         }
     };
 });

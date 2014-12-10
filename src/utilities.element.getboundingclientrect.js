@@ -1,5 +1,6 @@
 /**
- * Polyfill for Function.prototype.bind
+ * Compat for Element.getBoundingClientRect in older browsers.
+ * Not all return the height and width property in the rectangle object
  */
 define(function() {
 
